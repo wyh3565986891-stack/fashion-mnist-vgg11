@@ -204,16 +204,27 @@ def toc_page(pages: dict, entries: list[tuple[str, str]]) -> list:
     # 目录里的页码来自第一遍构建
     story = [Paragraph("目　　录", ParagraphStyle("toctitle", fontName="SimHei", fontSize=16,
                                                   alignment=TA_CENTER, spaceAfter=12))]
+    left_style = ParagraphStyle("toc", fontName="SimSun", fontSize=10.5, leading=19.5)
+    page_style = ParagraphStyle("tocpage", fontName="SimSun", fontSize=10.5, leading=19.5,
+                                alignment=2)
+    dot_size = 6
+    dot_width = max(0.5, pdfmetrics.stringWidth("·", "SimSun", dot_size))
+    page_column = 10 * mm
+    rows = []
     for level, title in entries:
         page = pages.get(level, "")
         left = f"{level}  {title}" if "." not in level else f"　　{level}  {title}"
-        style = ParagraphStyle("toc", fontName="SimSun", fontSize=10.5, leading=19.5)
         left_width = pdfmetrics.stringWidth(left, "SimSun", 10.5)
-        right_width = pdfmetrics.stringWidth(str(page), "SimSun", 10.5)
-        dot_width = max(0.5, pdfmetrics.stringWidth("·", "SimSun", 10.5))
-        available = FRAME_WIDTH - left_width - right_width - 14
-        dots = "·" * max(2, int(available / dot_width))
-        story.append(Paragraph(f"{left}  {dots}  {page}", style))
+        available = FRAME_WIDTH - page_column - left_width - 6
+        dots = f'<font size="{dot_size}">' + "·" * max(2, int(available / dot_width)) + "</font>"
+        rows.append([Paragraph(f"{left}  {dots}", left_style), Paragraph(str(page), page_style)])
+    story.append(Table(rows, colWidths=[FRAME_WIDTH - page_column, page_column], style=[
+        ("VALIGN", (0, 0), (-1, -1), "TOP"),
+        ("LEFTPADDING", (0, 0), (-1, -1), 0),
+        ("RIGHTPADDING", (0, 0), (-1, -1), 0),
+        ("TOPPADDING", (0, 0), (-1, -1), 0),
+        ("BOTTOMPADDING", (0, 0), (-1, -1), 0),
+    ]))
     story.append(PageBreak())
     return story
 
