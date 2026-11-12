@@ -840,6 +840,10 @@ def appendix(R) -> list:
     story = [KeepTogether([H1T("附录 A", "运行环境与复现步骤"),
                             table(rows, [34, 92], align_left_first=True),
                             caption("表 A1　实验环境")])]
+    story.append(P(
+        "代码仓库：https://github.com/wyh3565986891-stack/fashion-mnist-vgg11 。"
+        "仓库里是全部脚本和 runs/ 下的指标 JSON（数据与权重体积大，没有入库，"
+        "按下面的命令跑一遍即可重新生成）；README 里写了环境、命令和九组结果表。"))
     story.append(P("完整复现流程（在仓库根目录执行）：", BODY_NO_INDENT))
     for command in [
         "pip install -r requirements.txt",
