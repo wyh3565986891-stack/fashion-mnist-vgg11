@@ -1,6 +1,4 @@
-"""Per-stage cost table (parameters / MACs) for the report, straight from the code."""
-
-from __future__ import annotations
+# 逐 stage 的参数量和乘加，直接从代码里算
 
 import argparse
 import json

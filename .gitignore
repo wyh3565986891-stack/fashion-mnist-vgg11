@@ -16,3 +16,4 @@ report_tmp.pdf
 runs/*.log
 runs/*.err
 sample.png
+preview/

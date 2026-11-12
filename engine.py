@@ -1,31 +1,25 @@
-"""Training / evaluation helpers shared by every experiment."""
-
-from __future__ import annotations
+# 训练和评估用的公共函数：算乘加、算参数量、混淆矩阵指标、训练循环。
 
 import json
 import time
-from dataclasses import dataclass, field
 from pathlib import Path
 
 import torch
 from torch import nn
 
 
-# --------------------------------------------------------------------------- #
-# cost accounting
-# --------------------------------------------------------------------------- #
 @torch.inference_mode()
-def count_macs(model: nn.Module, size: int = 28) -> int:
-    """Multiply-accumulate operations of one forward pass (conv + linear)."""
+def count_macs(model, size=28):
+    # 跑一次前向，用 hook 累加卷积和全连接的乘加次数
     total = 0
     handles = []
 
-    def conv_hook(module: nn.Conv2d, inputs, output):
+    def conv_hook(module, inputs, output):
         nonlocal total
         kernel = module.kernel_size[0] * module.kernel_size[1]
         total += output.numel() * (module.in_channels // module.groups) * kernel
 
-    def linear_hook(module: nn.Linear, inputs, output):
+    def linear_hook(module, inputs, output):
         nonlocal total
         total += module.in_features * module.out_features
 
@@ -41,25 +35,12 @@ def count_macs(model: nn.Module, size: int = 28) -> int:
     return total
 
 
-def count_parameters(model: nn.Module) -> int:
+def count_parameters(model):
     return sum(p.numel() for p in model.parameters() if p.requires_grad)
 
 
-# --------------------------------------------------------------------------- #
-# metrics
-# --------------------------------------------------------------------------- #
-@dataclass
-class Metrics:
-    loss: float = 0.0
-    accuracy: float = 0.0
-    macro_f1: float = 0.0
-    per_class: dict = field(default_factory=dict)
-    confusion: list = field(default_factory=list)
-    n: int = 0
-
-
-def metrics_from_confusion(confusion: torch.Tensor) -> dict:
-    """Derive accuracy / macro-F1 / per-class scores from a 10x10 count matrix."""
+def metrics_from_confusion(confusion):
+    # 从 10x10 计数矩阵推准确率、宏平均 F1 和各类指标
     confusion = confusion.double()
     total = confusion.sum().item()
     tp = confusion.diag()
@@ -79,7 +60,7 @@ def metrics_from_confusion(confusion: torch.Tensor) -> dict:
 
 
 @torch.inference_mode()
-def evaluate(model: nn.Module, loader, criterion: nn.Module | None = None) -> dict:
+def evaluate(model, loader, criterion=None):
     model.eval()
     confusion = torch.zeros(10, 10, dtype=torch.long)
     loss_sum = 0.0
@@ -96,13 +77,9 @@ def evaluate(model: nn.Module, loader, criterion: nn.Module | None = None) -> di
     return out
 
 
-# --------------------------------------------------------------------------- #
-# training
-# --------------------------------------------------------------------------- #
-def train(model: nn.Module, train_loader, val_loader, *, epochs: int, lr: float,
-          weight_decay: float, seed: int, checkpoint: Path,
-          eval_train: bool = False):
-    """Cosine-annealed AdamW training; keeps the best validation checkpoint."""
+def train(model, train_loader, val_loader, epochs=16, lr=1e-3, weight_decay=5e-4,
+          seed=42, checkpoint=None, eval_train=False):
+    # AdamW + 余弦退火，验证精度最高的那一轮存盘
     torch.manual_seed(seed)
     criterion = nn.CrossEntropyLoss(label_smoothing=0.05)
     optimizer = torch.optim.AdamW(model.parameters(), lr=lr, weight_decay=weight_decay)

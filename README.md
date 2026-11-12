@@ -1,13 +1,11 @@
-# VGG11 × Fashion-MNIST：CNN 结构消融与轻量部署
+# Fashion-MNIST 上的窄通道 VGG11：一次只改一处，九个配置对照
 
-一个「可控变量」的卷积网络实验项目：以窄通道 VGG11 为基线，在 **完全相同的数据划分、随机种子与训练协议** 下，逐项替换卷积算子（深度可分离卷积）、注意力模块（SE / CBAM）、激活函数（GELU / Mish）与归一化层（GroupNorm），
-定量回答三个问题——
+这是课程大作业的代码。基线是一个按 28×28 输入缩小过的 VGG11（五层 stage，通道 16-32-64-96-96，约 39 万参数），
+在 Fashion-MNIST 上训练到 0.9226。然后在这条基线上逐一替换卷积、注意力、激活函数、归一化层，
+看每一项各自换来多少精度、多少计算量，最后把模型导成 ONNX、做个网页演示，看它在退化输入上稳不稳。
 
-1. 每个结构改动各值多少精度、多少计算量？
-2. 同样的算力预算下，哪种组合更值得部署？
-3. 模型真的能落地吗（Web 交互、ONNX 导出、量化、鲁棒性、置信度分流）？
-
-所有实验数字均由 `runs/*.json` 统一产出，报告 `report.py` 从这些 JSON 与图片自动生成，**不存在手抄数字**。
+所有实验共用一套数据划分、随机种子和训练超参数，只有网络结构不同。报告里的数字都是脚本从 `runs/*.json` 读出来的，
+不用手抄。
 
 ## 实验矩阵
 
@@ -27,8 +25,8 @@
 
 ## 主要结果
 
-数据划分：官方 60000 张训练集切 55000 / 5000（固定种子 42），官方 10000 张测试集只用于最终评估。
-训练：AdamW、余弦退火、label smoothing 0.05、RandomCrop(28, padding=2) + 水平翻转、16 轮、batch 128。
+官方 60000 张训练集按固定种子 42 切成 55000 / 5000（验证），官方 10000 张测试集只在最后评一次。
+训练用 AdamW + 余弦退火，label smoothing 0.05，RandomCrop(28, padding=2) 加水平翻转，16 轮，batch 128。
 
 | 配置 | 结构修改 | 参数量 | MACs | 测试准确率 | macro-F1 | 相对基线 |
 | --- | --- | ---: | ---: | ---: | ---: | ---: |
@@ -42,13 +40,13 @@
 | `gn` | GroupNorm(8) | 386,618 | 5,156,736 | 0.9151 | 0.9147 | −0.75 pp |
 | `final` | 可分离 + CBAM + GELU | 77,088 | 1,568,982 | 0.9067 | 0.9063 | −1.59 pp |
 
-小批量对照（batch=16，8 轮）：`vgg11` 0.9113、`gn` 0.9076 —— GN 与 BN 的差距从 0.75 pp 缩小到 0.37 pp，但没有反超。
+小批量对照（batch=16，8 轮）：`vgg11` 0.9113、`gn` 0.9076。GN 和 BN 的差距从 0.75 pp 缩到 0.37 pp，但没有反超。
 
-三条结论：
+几点观察：
 
-- **压缩位置比压缩技巧更重要。** Stage 3 只占 14.4% 的参数，却消耗 52.5% 的 MACs；把可分离卷积只放在 Stage 3–5，用 18.4% 的参数拿到 30.1% 的计算量，精度代价 1.78 pp。全部替换只再多省 4,071 个参数、867,888 次乘加，精度却再掉 2.12 pp。
-- **注意力在这个任务上没有收益。** SE 与 CBAM 都只增加 1.5% 参数，准确率分别掉 0.36 pp / 0.33 pp；Grad-CAM 也没有显示出一致的定位改善，衬衫 ↔ T 恤的互相误判反而从 173 例增加到 193 / 218 例。
-- **激活函数是「免费」的微调。** GELU 与 Mish 不增加任何参数与乘加，分别 +0.20 pp / +0.31 pp；但差距小于单种子噪声，只能算方向性提示。
+- 压缩放在哪里比用什么方法更重要。Stage 3 只占 14.4% 的参数，却占了 52.5% 的乘加；可分离卷积只铺在 Stage 3–5，参数压到 18.4%、乘加压到 30.1%，代价是 1.78 pp 精度。五个 stage 全换，只再多省 4,071 个参数和 867,888 次乘加，精度又掉 2.12 pp。
+- 注意力在这个任务上没有帮上忙。SE 和 CBAM 各多 1.5% 的参数，准确率分别低 0.36 pp 和 0.33 pp；Grad-CAM 也没看出明显的定位改善，衬衫和 T 恤的互相误判从 173 例变成 193 例和 218 例。
+- 换激活函数不用付参数代价。GELU 和 Mish 参数量、乘加都不变，分别高 0.20 pp 和 0.31 pp。不过这个差距比换随机种子的波动还小，只能当方向看。
 
 ## 部署侧结果
 
@@ -57,18 +55,19 @@
 | `vgg11` | 386,618 | 1515 KB | 407 KB | 0.77 ms | 0.09 ms | 1.47 ms |
 | `final` | 77,088 | 334 KB | 176 KB | 3.52 ms | 0.25 ms | 2.20 ms |
 
-CPU 单线程、batch=1 的实测结论：
+CPU 单线程、batch=1 实测（`export_onnx.py`）：
 
-- ONNX Runtime 的 fp32 推理比 PyTorch eager 快 3–9 倍（图优化对 conv 更充分）。
-- **动态 int8 量化在这类小通道模型上是负优化**：体积缩到 27%–53%，但单线程延迟比 fp32 ONNX 慢 8.8–17.3 倍（ConvInteger 缺少小通道优化 kernel，反量化与调度开销盖过整数运算收益）。
-- 可分离卷积在 PyTorch eager 下反而更慢（depthwise 的 CPU 实现效率低），同一模型换运行时就是另一套结论。
+- ONNX Runtime 的 fp32 推理比 PyTorch eager 快 3–9 倍，主要是图优化把 conv 合并掉了。
+- 动态 int8 量化在这个小通道模型上是负优化：体积缩到 27%–53%，但单线程延迟比 fp32 ONNX 慢 8.8–17.3 倍。onnxruntime 的 ConvInteger 对小通道卷积缺少优化 kernel，反量化和调度的开销盖过了整数运算的收益。
+- 可分离卷积在 PyTorch eager 下反而更慢，depthwise 的 CPU 实现效率低。同一个模型换个运行时，结论就变了。
 
-鲁棒性（6 种合成退化，10000 张测试集）：平均掉点 `vgg11` 21.8 pp、`sep` 17.7 pp、`cbam` 18.6 pp、`final` 16.0 pp；
-最脆弱的是高斯噪声（平均 −32.4 pp），最不敏感的是亮度缩放（−10.1 pp）。`final` 在 10×10 遮挡下只有 0.7186，是四个模型里最低的——结构改动之间不是简单叠加。
+鲁棒性用 6 种合成退化在 10000 张测试集上测：平均掉点 `vgg11` 21.8 pp、`sep` 17.7 pp、`cbam` 18.6 pp、`final` 16.0 pp。
+最脆弱的是高斯噪声（平均 −32.4 pp），最不敏感的是亮度缩放（−10.1 pp）。`final` 在 10×10 遮挡下只有 0.7186，四个模型里最低，说明结构改动之间不是简单叠加。
 
-置信度分流（`final`，阈值 0.60）：8.3% 的样本低于阈值、其准确率仅 50.9%；其余 91.7% 自动通过的准确率 94.3%。人工只处理 8.3% 的样本，流水线等效准确率从 0.9067 抬到 0.9474。
+置信度分流（`final`，阈值 0.60）：8.3% 的样本低于阈值，这部分准确率只有 50.9%；其余 91.7% 自动通过，准确率 94.3%。
+人工只看 8.3% 的样本，流水线的等效准确率就从 0.9067 抬到 0.9474。
 
-## 目录结构
+## 目录
 
 ```
 cnn_coursework/
@@ -77,7 +76,7 @@ cnn_coursework/
 ├── engine.py         # 训练循环、评估、混淆矩阵与 F1、MACs 统计
 ├── train.py          # 单配置训练入口 → runs/<name>/metrics.json
 ├── aggregate.py      # 汇总为 runs/summary.json / summary.csv
-├── describe.py       # 逐阶段参数量与 MACs → runs/architecture.json
+├── describe.py       # 逐 stage 参数量与 MACs → runs/architecture.json
 ├── dataset_stats.py  # 数据集统计 → runs/dataset.json
 ├── plots.py          # 训练曲线、准确率、精度-计算量、混淆矩阵、per-class F1、鲁棒性
 ├── gradcam.py        # Grad-CAM 可视化 → figures/gradcam.png
@@ -94,15 +93,16 @@ cnn_coursework/
 ## 快速开始
 
 ```bash
-python -m venv .venv && .venv\Scripts\activate    # Windows
+python -m venv .venv && .venv\Scripts\activate
 pip install -r requirements.txt
 
-python download.py                 # 下载并校验 Fashion-MNIST 到 data/
+python download.py                          # 数据下到 data/，已有文件会校验 MD5
 python train.py --name vgg11 --epochs 16
 python predict.py sample.png --name vgg11 --topk 3
 ```
 
-`train.py` 会把权重、逐轮曲线、per-class 指标、混淆矩阵与参数量/MACs 写进 `runs/<name>/metrics.json`（`--tag` 用于区分同配置的附加实验）。
+`train.py` 会把权重、逐轮曲线、per-class 指标、混淆矩阵和参数量/乘加写进 `runs/<name>/metrics.json`。
+同一个配置想多跑一组，用 `--tag` 区分目录。
 
 ### 复现全部实验
 
@@ -121,53 +121,53 @@ python export_onnx.py
 python report.py --out ../output/CNN大作业/2427080125王炎煌.pdf
 ```
 
-（Linux/macOS 把 `for /f` 一行换成 `for n in vgg11 sep sep_all se cbam gelu mish gn final; do python train.py --name $n --epochs 16; done`。）
+Linux/macOS 把 `for /f` 那行换成 `for n in vgg11 sep sep_all se cbam gelu mish gn final; do python train.py --name $n --epochs 16; done`。
 
-训练在 6 线程 CPU 上单配置约 6–8 分钟，九个配置串行约 1 小时；三进程并行时单轮 22–31 秒。
+6 线程 CPU 上单配置大约 6–8 分钟，九个串行一个多小时。三个进程并行跑的话单轮 22–31 秒。
 
 ### Web 演示
 
 ```bash
 python webapp.py --name final --port 8000
-# 浏览器打开 http://127.0.0.1:8000 ，拖入图片或点“随机测试图”
+# 打开 http://127.0.0.1:8000，拖图进去或点「随机测试图」
 ```
 
-只依赖 Python 标准库的 `http.server` + PIL + PyTorch，不引入 Flask/FastAPI。回复 Top-3 类目与概率，最高概率低于 0.60 时标记「转人工复核」；预处理会自动把「深色衣物 + 白底」的真实照片反色成训练分布的「亮色衣物 + 黑底」。
+只用标准库的 `http.server`、PIL 和 PyTorch，没有 Flask/FastAPI。返回 Top-3 类目和概率，最高概率低于 0.60 时标「转人工复核」。
+预处理会把「深色衣服 + 白底」的实拍图自动反色，换成训练时的「浅色衣服 + 黑底」。
 
-## 结果文件
+## 生成的文件
 
 | 文件 | 内容 |
 | --- | --- |
 | `runs/<name>/metrics.json` | 单配置的全部指标：history / test / per_class / confusion / parameters / macs |
 | `runs/summary.json`、`summary.csv` | 11 组实验的横向对比 |
-| `runs/architecture.json` | 逐 stage 的参数量、MACs、输出尺寸 |
+| `runs/architecture.json` | 逐 stage 的参数量、乘加、输出尺寸 |
 | `runs/dataset.json` | 类别计数、像素均值/标准差 |
 | `runs/robustness.json` | 4 个模型 × 7 种条件的准确率与损失 |
 | `runs/confidence.json` | 5 个阈值下的覆盖率 / 准确率 / 转人工比例 |
 | `runs/export.json` | ONNX / int8 体积与单线程延迟 |
 | `runs/gradcam.json` | Grad-CAM 的预测与真实标签对照 |
-| `figures/*.png` | 报告里用到的全部图表 |
+| `figures/*.png` | 报告里用到的全部图 |
 
 ## 环境
 
 - Windows 11（`Windows-11-10.0.26200-SP0`），Python 3.12.10
 - PyTorch 2.15.0+cpu / torchvision 0.29.2+cpu
 - NumPy 2.5.4 / Matplotlib 3.11.2 / Pillow 13.0.0
-- onnx 1.23.2 / onnxruntime 1.31.1（导出与量化）
-- reportlab 5.1.0（生成 PDF 报告）
-- CPU：Intel Core i9-14900HX，训练用 6 线程
+- onnx 1.23.2 / onnxruntime 1.31.1
+- reportlab 5.1.0
 
-全部实验在 CPU 上完成，不需要 GPU。
+全部在 CPU 上跑，不需要显卡。
 
 ## 报告
 
-完整的中文实验报告（16 页，含 11 张表、8 张图）由 `report.py` 自动生成：
+中文报告 16 页，13 张表、8 张图，由 `report.py` 从 JSON 和图生成：
 
 ```
 ../output/CNN大作业/2427080125王炎煌.pdf
 ```
 
-报告中的每一个数字都来自 `runs/*.json`，图表来自 `figures/*.png`，改动实验后重跑 `aggregate.py → plots.py → report.py` 即可同步更新。
+改完实验按 `aggregate.py → plots.py → report.py` 重跑一遍，报告里的数会跟着变。
 
 ## 参考
 

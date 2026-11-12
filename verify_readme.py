@@ -1,12 +1,4 @@
-"""Cross-check the numbers quoted in README.md against runs/summary.json.
-
-Every experiment number in the README must be reproducible from the JSON artifacts,
-so this script re-reads both and fails loudly on any mismatch.
-
-    python verify_readme.py
-"""
-
-from __future__ import annotations
+# 核对 README 里的数字和 runs/summary.json 是否一致
 
 import json
 import re

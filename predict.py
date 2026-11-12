@@ -1,9 +1,4 @@
-"""Predict the top-k categories of one garment image.
-
-    python predict.py demo.png --name final
-"""
-
-from __future__ import annotations
+# 单张图的 top-k 预测
 
 import argparse
 from pathlib import Path

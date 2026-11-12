@@ -1,6 +1,4 @@
-"""Time a few training steps to pick a sensible thread count and epoch budget."""
-
-from __future__ import annotations
+# 测几步训练时间，用来定线程数和训练轮数
 
 import argparse
 import time

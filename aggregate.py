@@ -1,6 +1,4 @@
-"""Collect every runs/*/metrics.json into one table (summary.json / summary.csv)."""
-
-from __future__ import annotations
+# 把 runs/*/metrics.json 汇总成 summary.json 和 summary.csv
 
 import argparse
 import csv

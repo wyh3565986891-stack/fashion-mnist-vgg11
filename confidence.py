@@ -1,12 +1,4 @@
-"""Confidence / coverage trade-off: how much accuracy do we gain by sending low-confidence
-samples to a human reviewer?
-
-    python confidence.py --models final vgg11
-
-Writes runs/confidence.json, which the report uses for the review-threshold discussion.
-"""
-
-from __future__ import annotations
+# 置信度阈值和人工复核的覆盖率-精度权衡，输出 runs/confidence.json
 
 import argparse
 import json

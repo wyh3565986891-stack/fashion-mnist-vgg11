@@ -1,6 +1,4 @@
-"""Export to ONNX, quantize to int8 and measure single-thread CPU latency."""
-
-from __future__ import annotations
+# 导出 ONNX、做 int8 动态量化、测单线程延迟
 
 import argparse
 import json

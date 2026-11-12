@@ -1,6 +1,4 @@
-"""Dataset statistics quoted in the report (class balance, pixel mean/std)."""
-
-from __future__ import annotations
+# 数据集统计：类别分布、像素均值和标准差
 
 import argparse
 import json

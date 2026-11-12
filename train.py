@@ -1,10 +1,5 @@
-"""Train one model configuration and persist every number used in the report.
-
-Example:
-    python train.py --name cbam --epochs 12
-"""
-
-from __future__ import annotations
+# 训练一个配置，把报告要用的数字全部写进 runs/<name>/metrics.json。
+# 用法：python train.py --name cbam --epochs 16
 
 import argparse
 import json
@@ -19,10 +14,10 @@ from engine import count_macs, count_parameters, evaluate, train
 from models import CLASSES, CONFIGS, DESCRIPTIONS, build_model
 
 
-def parse_args() -> argparse.Namespace:
-    parser = argparse.ArgumentParser(description=__doc__)
+def parse_args():
+    parser = argparse.ArgumentParser()
     parser.add_argument("--name", required=True, choices=sorted(CONFIGS))
-    parser.add_argument("--tag", default="", help="extra suffix for the output folder")
+    parser.add_argument("--tag", default="", help="输出目录的后缀")
     parser.add_argument("--epochs", type=int, default=12)
     parser.add_argument("--batch", type=int, default=128)
     parser.add_argument("--lr", type=float, default=1e-3)
@@ -36,7 +31,7 @@ def parse_args() -> argparse.Namespace:
     return parser.parse_args()
 
 
-def main() -> None:
+def main():
     args = parse_args()
     torch.set_num_threads(args.threads)
     torch.manual_seed(args.seed)

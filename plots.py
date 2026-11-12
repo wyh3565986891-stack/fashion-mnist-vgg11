@@ -1,6 +1,4 @@
-"""Every figure used in the report, generated from runs/*.json (never hand-edited)."""
-
-from __future__ import annotations
+# 报告里的图全部由 runs/*.json 生成，不手改
 
 import argparse
 import json

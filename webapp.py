@@ -1,9 +1,4 @@
-"""Minimal web demo: upload a garment photo, get top-3 categories and a manual-review flag.
-
-    python webapp.py --port 8000      # then open http://127.0.0.1:8000
-"""
-
-from __future__ import annotations
+# 极简 Web 演示：上传一张图，返回 top-3 和是否转人工
 
 import argparse
 import base64

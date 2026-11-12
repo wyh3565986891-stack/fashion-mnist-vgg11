@@ -1,6 +1,4 @@
-"""Grad-CAM: where does the network look? Baseline vs. attention-augmented model."""
-
-from __future__ import annotations
+# Grad-CAM：baseline 和组合模型分别看图片的哪里
 
 import argparse
 import json
@@ -21,7 +19,7 @@ plt.rcParams["axes.unicode_minus"] = False
 
 
 class GradCAM:
-    """Gradient-weighted class activation map for one convolutional stage."""
+    # 取某个 stage 的特征图和梯度，加权求和得到热力图
 
     def __init__(self, model: torch.nn.Module, layer: int = 3):
         self.model = model

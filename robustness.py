@@ -1,6 +1,4 @@
-"""Robustness under synthetic corruptions: does the modified model degrade less?"""
-
-from __future__ import annotations
+# 合成退化下的鲁棒性对比
 
 import argparse
 import json
