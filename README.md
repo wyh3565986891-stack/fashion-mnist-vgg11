@@ -87,6 +87,7 @@ cnn_coursework/
 ├── predict.py        # 命令行单图预测
 ├── report.py         # 由 JSON + PNG 生成中文 PDF 报告
 ├── download.py       # 下载并校验 Fashion-MNIST
+├── demo_check.py     # 验收前自检：数据、权重、图、报告、网页演示
 └── requirements.txt
 ```
 
@@ -99,6 +100,7 @@ pip install -r requirements.txt
 python download.py                          # 数据下到 data/，已有文件会校验 MD5
 python train.py --name vgg11 --epochs 16
 python predict.py sample.png --name vgg11 --topk 3
+python demo_check.py                        # 检查数据、九组权重、图、报告和网页演示
 ```
 
 `train.py` 会把权重、逐轮曲线、per-class 指标、混淆矩阵和参数量/乘加写进 `runs/<name>/metrics.json`。
