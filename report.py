@@ -18,13 +18,15 @@ from reportlab.pdfbase.ttfonts import TTFont
 from reportlab.platypus import (BaseDocTemplate, Frame, Image, KeepTogether, PageBreak,
                                 PageTemplate, Paragraph, Spacer, Table, TableStyle)
 
+from equations import render as render_equation
+
 # 字体和样式
 pdfmetrics.registerFont(TTFont("SimSun", "C:/Windows/Fonts/simsun.ttc", subfontIndex=0))
 pdfmetrics.registerFont(TTFont("SimHei", "C:/Windows/Fonts/simhei.ttf"))
 pdfmetrics.registerFont(TTFont("KaiTi", "C:/Windows/Fonts/simsun.ttc", subfontIndex=0))
 
-BODY = ParagraphStyle("Body", fontName="SimSun", fontSize=10.5, leading=17.5,
-                      firstLineIndent=21, alignment=TA_JUSTIFY, spaceAfter=3,
+BODY = ParagraphStyle("Body", fontName="SimSun", fontSize=10.5, leading=16.6,
+                      firstLineIndent=21, alignment=TA_JUSTIFY, spaceAfter=2.5,
                       wordWrap="CJK", splitLongWords=1)
 BODY_NO_INDENT = ParagraphStyle("BodyNoIndent", parent=BODY, firstLineIndent=0)
 CAPTION = ParagraphStyle("Caption", fontName="SimSun", fontSize=8.8, leading=13,
@@ -102,6 +104,29 @@ def figure(path: Path, width_mm: float, text: str):
         aspect = image.height / image.width
     width = width_mm * mm
     return KeepTogether([Image(str(path), width=width, height=width * aspect), caption(text)])
+
+
+EQ_NUM = ParagraphStyle("eqnum", fontName="SimSun", fontSize=10, alignment=2)
+
+
+def equation(latex: str, number: str = "", fontsize: float = 12.5):
+    # 公式用 matplotlib 的 mathtext 渲染成 Computer Modern 位图，居中放，编号右对齐
+    path, width, height = render_equation(latex, fontsize)
+    image = Image(path, width=width, height=height)
+    if not number:
+        image.hAlign = "CENTER"
+        return [Spacer(1, 6), image, Spacer(1, 8)]
+    grid = Table([["", image, Paragraph(f"({number})", EQ_NUM)]],
+                 colWidths=[11 * mm, FRAME_WIDTH - 22 * mm, 11 * mm])
+    grid.setStyle(TableStyle([
+        ("VALIGN", (0, 0), (-1, -1), "MIDDLE"),
+        ("ALIGN", (1, 0), (1, 0), "CENTER"),
+        ("LEFTPADDING", (0, 0), (-1, -1), 0),
+        ("RIGHTPADDING", (0, 0), (-1, -1), 0),
+        ("TOPPADDING", (0, 0), (-1, -1), 0),
+        ("BOTTOMPADDING", (0, 0), (-1, -1), 0),
+    ]))
+    return [Spacer(1, 6), grid, Spacer(1, 8)]
 
 
 # 数字格式
@@ -263,13 +288,22 @@ def section_intro(S, R, D, A) -> list:
         f"预处理只做两件事：训练时随机裁到 28×28（四周补 2 像素）再加水平翻转，"
         f"然后按训练集的统计量（mean={D['normalization_mean']}, std={D['normalization_std']}）标准化；"
         "验证和测试只做标准化。这样验证集上的精度不会被增广影响，可以直接用来选模型。"))
-
-    story.append(H2T("1.3", "评价指标"))
     story.append(P(
+        "类别是平衡的：每类正好 6000 张训练、1000 张测试，所以不需要重采样或类别加权，"
+        "宏平均 F1 和准确率也不会因为长尾而失真。划分用固定随机种子把官方训练集打乱后切 55000/5000，"
+        "测试集 10000 张留到最后评一次，不参与选轮次。"))
+
+    story.append(KeepTogether([H2T("1.3", "评价指标"), P(
         "主指标是准确率。四类上衣容易互相混淆，只看总准确率会掩盖某一类的退化，"
-        "所以同时报告宏平均 F1，也就是 10 个类别 F1 的算术平均。"
-        "模型成本看三项：参数量、单张图的乘加次数（MACs，卷积层按 H′W′·(C_in/g)·k²·C_out 统计，"
-        "全连接层按 in×out 统计，由 forward hook 实测）以及 CPU 单线程推理延迟。"
+        "所以同时报告宏平均 F1：先按类算精确率 P、召回率 R 和 F1，再对 C 个类别取算术平均。"),
+        *equation(r"F_{1}=\dfrac{2PR}{P+R},\quad \mathrm{macroF1}=\dfrac{1}{C}\sum_{c=1}^{C}F_{1}^{(c)}", "1")]))
+    story.append(KeepTogether([P(
+        "模型成本看三项：参数量、单张图的乘加次数（MACs）、CPU 单线程推理延迟。"
+        "乘加按层累加，卷积层的算法是"),
+        *equation(r"\mathrm{MACs}=\sum_{l}H'_{l}W'_{l}\cdot\dfrac{C_{in,l}}{g_{l}}\cdot k_{l}^{2}\cdot C_{out,l}", "2")]))
+    story.append(P(
+        "其中 H′W′ 是输出特征图的空间尺寸，g 是分组数（标准卷积取 1），k 是卷积核边长；"
+        "全连接层按 in×out 计。数值由 forward hook 在前向时实测，不是按公式估的。"
         "每轮训练耗时也一并记录，用来比较不同算子的实际开销。"))
     return story
 
@@ -380,12 +414,13 @@ def section_ablation(S, R, A) -> list:
     story.append(caption("表 4　九组对照实验"))
 
     # 3.1 可分离卷积
-    story.append(H2T("3.1", "深度可分离卷积"))
-    story.append(P(
+    story.append(KeepTogether([H2T("3.1", "深度可分离卷积"), P(
         "标准 3×3 卷积一次同时干两件事：在空间上做滤波，在通道上做混合，一次乘加就把 C_in 个通道压成 C_out 个。"
         "深度可分离卷积把它拆开：先对每个通道单独做 3×3 卷积（depthwise，groups=C_in），"
         "再用 1×1 卷积做通道组合（pointwise）。"
-        "参数量从 k²·C_in·C_out 降到 k²·C_in + C_in·C_out，两者之比约为 1/C_out + 1/k²；"
+        "参数量从 k²·C_in·C_out 降到 k²·C_in + C_in·C_out，两者之比可以写成"),
+        *equation(r"r=\dfrac{k^{2}C_{in}C_{out}}{k^{2}C_{in}+C_{in}C_{out}}=\dfrac{1}{C_{out}}+\dfrac{1}{k^{2}}", "3")]))
+    story.append(P(
         "C_out=96、k=3 时理论值只有 12.2%。乘加同理，只是再乘一个输出空间尺寸 H′W′。"))
     story.append(P(
         "做了两个变体：sep 只替换 Stage 3–5，也就是表 2 里参数量最大的后三个阶段；sep_all 替换全部五个 stage。"
@@ -480,11 +515,11 @@ def section_ablation(S, R, A) -> list:
                         "图 3　Grad-CAM（第 3 个 stage）：上排为基线，下排为可分离卷积 + CBAM + GELU 组合模型"))
 
     # 3.3 激活函数
-    story.append(H2T("3.3", "激活函数：GELU 与 Mish"))
-    story.append(P(
+    story.append(KeepTogether([H2T("3.3", "激活函数：GELU 与 Mish"), P(
         "ReLU 便宜，梯度不饱和，但负半轴直接截断，负值的信息全丢了。"
-        "GELU 用高斯 CDF 给负值留一个小斜率（x·Φ(x)），Mish 用 x·tanh(softplus(x)) 在负半轴先下去再回来。"
-        "这两个函数都想在保留稀疏性的同时留下一点负值信息。"))
+        "GELU 用高斯 CDF 给负值留一个小斜率，Mish 则用 tanh 包住 softplus，在负半轴先下去再回来："),
+        *equation(r"\mathrm{GELU}(x)=x\,\Phi(x)\qquad \mathrm{Mish}(x)=x\tanh\left(\ln(1+e^{x})\right)", "4")]))
+    story.append(P("这两个函数都想在保留稀疏性的同时留下一点负值信息。"))
     rows = [["配置", "参数量", "准确率", "相对基线", "macro-F1", "单轮耗时", "相对基线"]]
     for name in ("vgg11", "gelu", "mish"):
         record = R[name]
@@ -505,10 +540,12 @@ def section_ablation(S, R, A) -> list:
            "两者的差距超过了单次实验的噪声量级，说明平滑激活在这个任务上确实起到了额外正则的作用。")))
 
     # 3.4 归一化
-    story.append(H2T("3.4", "归一化层：BatchNorm 与 GroupNorm"))
-    story.append(P(
+    story.append(KeepTogether([H2T("3.4", "归一化层：BatchNorm 与 GroupNorm"), P(
         "BatchNorm 在 batch 维上统计均值和方差，batch 越小统计越不可靠。"
-        "GroupNorm 改成在每个样本内部把通道分成 8 组、在组内统计，完全不依赖 batch 大小。"
+        "GroupNorm 改成在每个样本内部把通道分成 8 组、在组内统计，完全不依赖 batch 大小："),
+        *equation(r"\hat{x}_{i}=\dfrac{x_{i}-\mu_{g}}{\sqrt{\sigma_{g}^{2}+\epsilon}}", "5")]))
+    story.append(P(
+        "其中 g 是第 i 个通道所在的组，均值和方差都在组内、单个样本上算。"
         "理论上前者 batch=128 时两者应该差不多，但边缘设备推理常常是 batch=1，"
         "这时 BN 只能用训练时存下的滑动统计量，GN 的行为则和训练时一样。"
         "为了验证，另外训了两个 batch=16 的模型（8 轮，其余不变），和 batch=128 的结果对照。"))
@@ -847,6 +884,7 @@ def appendix(R) -> list:
             ["confidence.py", "置信度阈值与人工复核的覆盖率—精度权衡"],
             ["export_onnx.py", "ONNX 导出与 int8 量化、延迟测量"],
             ["webapp.py", "零依赖 Web 演示（上传 / 随机测试图 / Top-3）"],
+            ["equations.py", "把 LaTeX 公式渲染成图片（matplotlib mathtext）"],
             ["report.py", "由 JSON 与 PNG 自动生成这份 PDF"]]
     story.append(KeepTogether([H1T("附录 B", "代码结构"),
                                table(rows, [36, 92], align_left_first=True),

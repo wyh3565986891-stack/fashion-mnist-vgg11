@@ -17,3 +17,4 @@ runs/*.log
 runs/*.err
 sample.png
 preview/
+figures/eq/

@@ -87,6 +87,7 @@ cnn_coursework/
 ├── predict.py        # 命令行单图预测
 ├── report.py         # 由 JSON + PNG 生成中文 PDF 报告
 ├── download.py       # 下载并校验 Fashion-MNIST
+├── equations.py      # 公式渲染（matplotlib mathtext → 图片）
 ├── demo_check.py     # 验收前自检：数据、权重、图、报告、网页演示
 └── requirements.txt
 ```
