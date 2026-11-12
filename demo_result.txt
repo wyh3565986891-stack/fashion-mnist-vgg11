@@ -1,3 +1,0 @@
-T-shirt/top: 0.9434
-Shirt: 0.0550
-Pullover: 0.0008

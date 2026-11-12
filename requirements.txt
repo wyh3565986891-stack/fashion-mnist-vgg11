@@ -1,3 +1,15 @@
-torch==2.6.0
-torchvision==0.21.0
-Pillow
+# Python 3.12; CPU wheels are enough for everything in this repo.
+# `pip install torch torchvision` installs CUDA builds by default on some platforms;
+# the experiments were run with the CPU-only builds below.
+torch==2.15.0
+torchvision==0.29.2
+numpy>=2.0
+matplotlib>=3.8
+Pillow>=10.0
+
+# deployment / export
+onnx>=1.16
+onnxruntime>=1.18
+
+# PDF report
+reportlab>=4.0

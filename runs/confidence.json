@@ -1,0 +1,95 @@
+{
+  "thresholds": [
+    0.5,
+    0.6,
+    0.7,
+    0.8,
+    0.9
+  ],
+  "models": [
+    {
+      "name": "final",
+      "accuracy": 0.9067,
+      "rows": [
+        {
+          "threshold": 0.5,
+          "coverage": 0.9635,
+          "accuracy_covered": 0.9249,
+          "accuracy_rejected": 0.4274,
+          "review_share": 0.0365
+        },
+        {
+          "threshold": 0.6,
+          "coverage": 0.9171,
+          "accuracy_covered": 0.9426,
+          "accuracy_rejected": 0.509,
+          "review_share": 0.0829
+        },
+        {
+          "threshold": 0.7,
+          "coverage": 0.865,
+          "accuracy_covered": 0.9602,
+          "accuracy_rejected": 0.5637,
+          "review_share": 0.135
+        },
+        {
+          "threshold": 0.8,
+          "coverage": 0.806,
+          "accuracy_covered": 0.9753,
+          "accuracy_rejected": 0.6216,
+          "review_share": 0.194
+        },
+        {
+          "threshold": 0.9,
+          "coverage": 0.6938,
+          "accuracy_covered": 0.9901,
+          "accuracy_rejected": 0.7178,
+          "review_share": 0.3062
+        }
+      ],
+      "confidence_mean": 0.8742
+    },
+    {
+      "name": "vgg11",
+      "accuracy": 0.9226,
+      "rows": [
+        {
+          "threshold": 0.5,
+          "coverage": 0.9758,
+          "accuracy_covered": 0.934,
+          "accuracy_rejected": 0.4628,
+          "review_share": 0.0242
+        },
+        {
+          "threshold": 0.6,
+          "coverage": 0.9406,
+          "accuracy_covered": 0.9488,
+          "accuracy_rejected": 0.5084,
+          "review_share": 0.0594
+        },
+        {
+          "threshold": 0.7,
+          "coverage": 0.9014,
+          "accuracy_covered": 0.9613,
+          "accuracy_rejected": 0.569,
+          "review_share": 0.0986
+        },
+        {
+          "threshold": 0.8,
+          "coverage": 0.8509,
+          "accuracy_covered": 0.9745,
+          "accuracy_rejected": 0.6264,
+          "review_share": 0.1491
+        },
+        {
+          "threshold": 0.9,
+          "coverage": 0.7576,
+          "accuracy_covered": 0.9883,
+          "accuracy_rejected": 0.7174,
+          "review_share": 0.2424
+        }
+      ],
+      "confidence_mean": 0.8947
+    }
+  ]
+}

@@ -1,0 +1,48 @@
+{
+  "train_size": 60000,
+  "test_size": 10000,
+  "image_shape": [
+    28,
+    28
+  ],
+  "classes": [
+    "T-shirt/top",
+    "Trouser",
+    "Pullover",
+    "Dress",
+    "Coat",
+    "Sandal",
+    "Shirt",
+    "Sneaker",
+    "Bag",
+    "Ankle boot"
+  ],
+  "train_per_class": [
+    6000,
+    6000,
+    6000,
+    6000,
+    6000,
+    6000,
+    6000,
+    6000,
+    6000,
+    6000
+  ],
+  "test_per_class": [
+    1000,
+    1000,
+    1000,
+    1000,
+    1000,
+    1000,
+    1000,
+    1000,
+    1000,
+    1000
+  ],
+  "pixel_mean": 0.2860405743122101,
+  "pixel_std": 0.3530242443084717,
+  "normalization_mean": 0.286,
+  "normalization_std": 0.353
+}

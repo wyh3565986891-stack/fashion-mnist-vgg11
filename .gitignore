@@ -1,3 +1,18 @@
 data/
 __pycache__/
+*.pyc
+.ipynb_checkpoints/
+
+# training artifacts: keep the measured JSON/figures, drop the heavy checkpoints
+runs/**/*.pt
 runs/*.pt
+runs/report_tmp.pdf
+report_tmp.pdf
+
+# exported models
+*.onnx
+
+# run logs / throwaway inputs
+runs/*.log
+runs/*.err
+sample.png

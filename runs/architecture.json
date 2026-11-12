@@ -1,0 +1,221 @@
+{
+  "vgg11": {
+    "name": "vgg11",
+    "rows": [
+      {
+        "stage": "stage1",
+        "shape": [
+          16,
+          28,
+          28
+        ],
+        "modules": [
+          "BatchNorm2d",
+          "Conv2d",
+          "MaxPool2d",
+          "ReLU"
+        ],
+        "params": 176,
+        "macs": 112896,
+        "params_share": 0.0004552297099462519,
+        "macs_share": 0.02189291831111773
+      },
+      {
+        "stage": "stage2",
+        "shape": [
+          32,
+          14,
+          14
+        ],
+        "modules": [
+          "BatchNorm2d",
+          "Conv2d",
+          "MaxPool2d",
+          "ReLU"
+        ],
+        "params": 4672,
+        "macs": 903168,
+        "params_share": 0.012084279573118686,
+        "macs_share": 0.17514334648894184
+      },
+      {
+        "stage": "stage3",
+        "shape": [
+          64,
+          7,
+          7
+        ],
+        "modules": [
+          "BatchNorm2d",
+          "Conv2d",
+          "MaxPool2d",
+          "ReLU"
+        ],
+        "params": 55552,
+        "macs": 2709504,
+        "params_share": 0.1436870502666715,
+        "macs_share": 0.5254300394668255
+      },
+      {
+        "stage": "stage4",
+        "shape": [
+          96,
+          3,
+          3
+        ],
+        "modules": [
+          "BatchNorm2d",
+          "Conv2d",
+          "MaxPool2d",
+          "ReLU"
+        ],
+        "params": 138624,
+        "macs": 1244160,
+        "params_share": 0.3585554733613024,
+        "macs_share": 0.24126889567354234
+      },
+      {
+        "stage": "stage5",
+        "shape": [
+          96,
+          1,
+          1
+        ],
+        "modules": [
+          "BatchNorm2d",
+          "Conv2d",
+          "ReLU"
+        ],
+        "params": 166272,
+        "macs": 165888,
+        "params_share": 0.43006792234194996,
+        "macs_share": 0.032169186089805644
+      },
+      {
+        "stage": "classifier",
+        "shape": null,
+        "modules": [
+          "Dropout",
+          "Linear"
+        ],
+        "params": 21322,
+        "macs": 21120,
+        "params_share": 0.05515004474701126,
+        "macs_share": 0.004095613969766923
+      }
+    ],
+    "params": 386618,
+    "macs": 5156736
+  },
+  "final": {
+    "name": "final",
+    "rows": [
+      {
+        "stage": "stage1",
+        "shape": [
+          16,
+          28,
+          28
+        ],
+        "modules": [
+          "BatchNorm2d",
+          "Conv2d",
+          "GELU",
+          "MaxPool2d"
+        ],
+        "params": 176,
+        "macs": 112896,
+        "params_share": 0.00228310502283105,
+        "macs_share": 0.07195493638550347
+      },
+      {
+        "stage": "stage2",
+        "shape": [
+          32,
+          14,
+          14
+        ],
+        "modules": [
+          "BatchNorm2d",
+          "Conv2d",
+          "GELU",
+          "MaxPool2d"
+        ],
+        "params": 4672,
+        "macs": 903168,
+        "params_share": 0.06060606060606061,
+        "macs_share": 0.5756394910840278
+      },
+      {
+        "stage": "stage3",
+        "shape": [
+          64,
+          7,
+          7
+        ],
+        "modules": [
+          "BatchNorm2d",
+          "Conv2d",
+          "GELU",
+          "MaxPool2d",
+          "ReLU"
+        ],
+        "params": 8386,
+        "macs": 350242,
+        "params_share": 0.10878476546284765,
+        "macs_share": 0.22322881970602595
+      },
+      {
+        "stage": "stage4",
+        "shape": [
+          96,
+          3,
+          3
+        ],
+        "modules": [
+          "BatchNorm2d",
+          "Conv2d",
+          "GELU",
+          "MaxPool2d",
+          "ReLU"
+        ],
+        "params": 19586,
+        "macs": 156690,
+        "params_share": 0.2540732669157327,
+        "macs_share": 0.09986730249295403
+      },
+      {
+        "stage": "stage5",
+        "shape": [
+          96,
+          1,
+          1
+        ],
+        "modules": [
+          "BatchNorm2d",
+          "Conv2d",
+          "GELU",
+          "ReLU"
+        ],
+        "params": 22946,
+        "macs": 24866,
+        "params_share": 0.2976598173515982,
+        "macs_share": 0.015848492844404843
+      },
+      {
+        "stage": "classifier",
+        "shape": null,
+        "modules": [
+          "Dropout",
+          "Linear"
+        ],
+        "params": 21322,
+        "macs": 21120,
+        "params_share": 0.27659298464092985,
+        "macs_share": 0.013460957487083982
+      }
+    ],
+    "params": 77088,
+    "macs": 1568982
+  }
+}

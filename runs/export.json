@@ -1,0 +1,23 @@
+{
+  "onnxruntime": true,
+  "models": [
+    {
+      "name": "vgg11",
+      "parameters": 386618,
+      "torch_ms": 0.765,
+      "onnx_kb": 1514.8,
+      "int8_kb": 407.3,
+      "onnx_ms": 0.085,
+      "int8_ms": 1.473
+    },
+    {
+      "name": "final",
+      "parameters": 77088,
+      "torch_ms": 3.52,
+      "onnx_kb": 334.0,
+      "int8_kb": 176.2,
+      "onnx_ms": 0.25,
+      "int8_ms": 2.201
+    }
+  ]
+}
